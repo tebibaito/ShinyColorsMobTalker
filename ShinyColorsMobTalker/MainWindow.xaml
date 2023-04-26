@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:ShinyColorsMobTalker"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="600">
-    <Grid>
-        
-    </Grid>
+  <Grid>
+    <Button Content="Button" HorizontalAlignment="Left" Margin="24,42,0,0" VerticalAlignment="Top" Height="32" Width="67" Click="Button_Click"/>
+
+  </Grid>
 </Window>
