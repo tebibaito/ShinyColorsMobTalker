@@ -9,12 +9,17 @@
         WindowStyle="None" 
         WindowState="Maximized" 
         AllowsTransparency="True" 
-        Background="#8f000000" 
+        Background="#80000000" 
         Cursor="Cross"
         Topmost="True"
         >
-    <Grid>
-      <Button Content="Button" HorizontalAlignment="Left" Margin="22,0,0,0" VerticalAlignment="Center" Click="Button_Click"/>
-
-  </Grid>
+  <Canvas x:Name="CanvasArea"
+            PreviewMouseLeftButtonDown="MouseLeftDown"
+            PreviewMouseLeftButtonUp="MouseLeftUp"
+            PreviewMouseMove="MouseMoving"
+          
+          Background="Transparent"
+          >
+    <Button Content="Button" HorizontalAlignment="Left" Margin="20,10,0,0" VerticalAlignment="Center" Click="Button_Click"/>
+  </Canvas>
 </Window>
