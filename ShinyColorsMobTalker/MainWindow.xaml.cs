@@ -27,7 +27,7 @@ namespace ShinyColorsMobTalker
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            var win = new Window1();
+            var win = new DecidingAreaWindow();
             win.Show();
         }
     }

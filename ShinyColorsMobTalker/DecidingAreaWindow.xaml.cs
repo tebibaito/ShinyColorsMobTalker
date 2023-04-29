@@ -18,14 +18,14 @@ namespace ShinyColorsMobTalker
     /// <summary>
     /// Window1.xaml の相互作用ロジック
     /// </summary>
-    public partial class Window1 : Window
+    public partial class DecidingAreaWindow : Window
     {
         bool isWriting = false;
         Point Init;
         private List<UIElement> RectangleList = new List<UIElement>();
         UIElement RectElement = new UIElement();
 
-        public Window1()
+        public DecidingAreaWindow()
         {
             InitializeComponent();
         }
