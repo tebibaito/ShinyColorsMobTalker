@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShinyColorsMobTalker.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +21,12 @@ namespace ShinyColorsMobTalker
     /// </summary>
     public partial class MainWindow : Window
     {
+        private CommonModel commonModel;
+
         public MainWindow()
         {
             InitializeComponent();
+            commonModel = CommonModel.GetInstance();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

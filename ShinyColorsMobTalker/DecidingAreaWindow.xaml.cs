@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShinyColorsMobTalker.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,14 +21,19 @@ namespace ShinyColorsMobTalker
     /// </summary>
     public partial class DecidingAreaWindow : Window
     {
-        bool isWriting = false;
-        Point Init;
+        private bool isWriting = false;
+        private Point initPoint;
+        private Point endPoint;
         private List<UIElement> RectangleList = new List<UIElement>();
-        UIElement RectElement = new UIElement();
+        private UIElement RectElement = new UIElement();
+
+        private CommonModel commonModel;
+
 
         public DecidingAreaWindow()
         {
             InitializeComponent();
+            commonModel = CommonModel.GetInstance();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -39,7 +45,7 @@ namespace ShinyColorsMobTalker
         private void MouseLeftDown(object sender, MouseButtonEventArgs e)
         {
             Canvas c = sender as Canvas;
-            Init = e.GetPosition(c);
+            initPoint = e.GetPosition(c);
             c.CaptureMouse();
             isWriting = true;
         }
@@ -51,6 +57,41 @@ namespace ShinyColorsMobTalker
                 Canvas c = sender as Canvas;
                 isWriting = false;
                 c.ReleaseMouseCapture();
+
+                // マウスクリックUP時の座標を画面内に収める
+                if(endPoint.X > CanvasArea.ActualWidth)
+                {
+                    endPoint.X = CanvasArea.ActualWidth;
+                }
+                else if(endPoint.X < 0)
+                {
+                    endPoint.X = 0;
+                }
+                if(endPoint.Y > CanvasArea.ActualHeight)
+                {
+                    endPoint.Y = CanvasArea.ActualHeight;
+                }
+                else if(endPoint.Y < 0)
+                {
+                    endPoint.Y = 0;
+                }
+
+                //マウスのスクリーン座標を取得
+                Point initScreenPoint = PointToScreen(initPoint);
+                Point endScreenPoint = PointToScreen(endPoint);
+
+                double width = Math.Abs(initScreenPoint.X - endScreenPoint.X);
+                double height = Math.Abs(initScreenPoint.Y - endScreenPoint.Y);
+                double leftTopX = initScreenPoint.X <= endScreenPoint.X ? initScreenPoint.X : endScreenPoint.X;
+                double leftTopY = initScreenPoint.Y <= endScreenPoint.Y ? initScreenPoint.Y : endScreenPoint.Y;
+
+                commonModel.SetLeftTopX(leftTopX);
+                commonModel.SetLeftTopY(leftTopY);
+                commonModel.SetWidth(width);
+                commonModel.SetHeight(height);
+                
+                Debug.Print($"leftTopX:{leftTopX}, leftTopY:{leftTopY}, width:{width}, height:{height}");
+
                 this.Close();
             }
         }
@@ -64,22 +105,22 @@ namespace ShinyColorsMobTalker
             rect.Stroke = new SolidColorBrush(Colors.Red);
             rect.StrokeThickness = 1;
 
-            rect.Width = Math.Abs(Init.X - point.X);
-            rect.Height = Math.Abs(Init.Y - point.Y);
+            rect.Width = Math.Abs(initPoint.X - point.X);
+            rect.Height = Math.Abs(initPoint.Y - point.Y);
 
             if (point.X > CanvasArea.ActualWidth)
             {
-                Canvas.SetLeft(rect, Init.X);
-                rect.Width = CanvasArea.ActualWidth - Init.X;
+                Canvas.SetLeft(rect, initPoint.X);
+                rect.Width = CanvasArea.ActualWidth - initPoint.X;                
             }
             else if (point.X < 0)
             {
                 Canvas.SetLeft(rect, 0);
-                rect.Width = Init.X;
+                rect.Width = initPoint.X;
             }
-            else if (Init.X < point.X)
+            else if (initPoint.X < point.X)
             {
-                Canvas.SetLeft(rect, Init.X);
+                Canvas.SetLeft(rect, initPoint.X);
             }
             else
             {
@@ -88,17 +129,17 @@ namespace ShinyColorsMobTalker
 
             if (point.Y > CanvasArea.ActualHeight)
             {
-                Canvas.SetTop(rect, Init.Y);
-                rect.Height = CanvasArea.ActualHeight - Init.Y;
+                Canvas.SetTop(rect, initPoint.Y);
+                rect.Height = CanvasArea.ActualHeight - initPoint.Y;
             }
             else if (point.Y < 0)
             {
                 Canvas.SetTop(rect, 0);
-                rect.Height = Init.Y;
+                rect.Height = initPoint.Y;
             }
-            else if (Init.Y < point.Y)
+            else if (initPoint.Y < point.Y)
             {
-                Canvas.SetTop(rect, Init.Y);
+                Canvas.SetTop(rect, initPoint.Y);
             }
             else
             {
@@ -114,6 +155,7 @@ namespace ShinyColorsMobTalker
             if(isWriting)
             {
                 Point pos = e.GetPosition(CanvasArea);
+                endPoint = pos;
                 WriteRectangle(pos);
             }
         }
