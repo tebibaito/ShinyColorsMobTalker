@@ -34,5 +34,10 @@ namespace ShinyColorsMobTalker
             var win = new DecidingAreaWindow();
             win.Show();
         }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            CommonModel.GetInstance().ScreenShot();
+        }
     }
 }

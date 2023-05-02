@@ -89,6 +89,8 @@ namespace ShinyColorsMobTalker
                 commonModel.SetLeftTopY(leftTopY);
                 commonModel.SetWidth(width);
                 commonModel.SetHeight(height);
+
+                commonModel.InitScreenShot();
                 
                 Debug.Print($"leftTopX:{leftTopX}, leftTopY:{leftTopY}, width:{width}, height:{height}");
 
