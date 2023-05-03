@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Diagnostics;
+using Windows.Storage.Streams;
+using System.IO;
+using OpenCvSharp.Extensions;
+using OpenCvSharp;
+using Windows.Media.Ocr;
 
 namespace ShinyColorsMobTalker.Models
 {
@@ -23,9 +29,15 @@ namespace ShinyColorsMobTalker.Models
         public Bitmap capturedImage { get; private set; }
 
 
+        private TextData currentTextData;
+
+        private OcrEngine ocrEngine;
+
+
+
         private CommonModel()
         {
-
+            ocrEngine = OcrEngine.TryCreateFromUserProfileLanguages();
         }
         
 
@@ -47,8 +59,7 @@ namespace ShinyColorsMobTalker.Models
         {
             using(Graphics graphics = Graphics.FromImage(capturedImage))
             {
-                graphics.CopyFromScreen(x, y, 0, 0, capturedImage.Size);
-                capturedImage.Save("C:\\Users\\hayat\\Desktop\\test.bmp", ImageFormat.Bmp);
+                graphics.CopyFromScreen(x, y, 0, 0, capturedImage.Size);                
             }
         }
 
@@ -71,6 +82,73 @@ namespace ShinyColorsMobTalker.Models
         public void SetHeight(double height)
         {
             this.height = (int)height;
+        }
+
+
+        private async void MainProc()
+        {
+            while(true)
+            {                
+                if(capturedImage != null)
+                {
+                    ScreenShot();
+                    Bitmap binaryImage = ConvertBinayImage(capturedImage);
+                    SoftwareBitmap softwareBmp = await GetSoftWareBmp(binaryImage);
+                    currentTextData = await OCR(softwareBmp);
+                    Debug.Print($"speaker:{currentTextData.speaker}, {currentTextData.text}");                    
+                }
+                System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        public void StartMainProc()
+        {
+            Task task = new Task(MainProc);
+            task.Start();
+        }
+
+        private async Task<SoftwareBitmap> GetSoftWareBmp(Bitmap bmp)
+        {
+            using(var stream = new InMemoryRandomAccessStream())
+            {
+                bmp.Save(stream.AsStream(), ImageFormat.Bmp);
+                Windows.Graphics.Imaging.BitmapDecoder decorder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(stream);
+                SoftwareBitmap softwareBmp = await decorder.GetSoftwareBitmapAsync();
+                return softwareBmp;
+            }
+        }
+
+
+        private Bitmap ConvertBinayImage(Bitmap bmp)
+        {
+            using(Mat mat = BitmapConverter.ToMat(bmp))
+            {
+                using(Mat grayMat = mat.CvtColor(ColorConversionCodes.BGR2GRAY))
+                {
+                    Mat binaryMat = grayMat.Threshold(155.0, 255, ThresholdTypes.Binary);
+                    return BitmapConverter.ToBitmap(binaryMat);
+                }
+            }
+        }
+
+
+        private async Task<TextData> OCR(SoftwareBitmap softwareBmp)
+        {
+            var result = await ocrEngine.RecognizeAsync(softwareBmp);
+            String tmpSpeaker = "";
+            String tmpSpeakerText = "";
+            foreach (var line in result.Lines.Select((value, index) => new {value, index}))
+            {
+                if(line.index == 0)
+                {
+                    tmpSpeaker = line.value.Text;
+                }
+                else
+                {
+                    tmpSpeakerText += line.value.Text + "\n";
+                }
+            }
+            return new TextData(tmpSpeaker, tmpSpeakerText);
         }
 
     }

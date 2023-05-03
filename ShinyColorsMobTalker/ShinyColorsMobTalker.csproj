@@ -57,6 +57,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Models\CommonModel.cs" />
+    <Compile Include="Models\TextData.cs" />
     <Compile Include="ViewModels\DecidingAreaWindowViewModel.cs" />
     <Page Include="DecidingAreaWindow.xaml">
       <SubType>Designer</SubType>
@@ -107,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts">
-      <Version>10.0.25346-preview</Version>
+      <Version>10.0.25336-preview</Version>
     </PackageReference>
     <PackageReference Include="OpenCvSharp4.Extensions">
       <Version>4.7.0.20230115</Version>

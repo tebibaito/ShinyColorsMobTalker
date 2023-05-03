@@ -27,6 +27,7 @@ namespace ShinyColorsMobTalker
         {
             InitializeComponent();
             commonModel = CommonModel.GetInstance();
+            commonModel.StartMainProc();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
