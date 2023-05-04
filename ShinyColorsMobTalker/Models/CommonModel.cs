@@ -13,6 +13,7 @@ using System.IO;
 using OpenCvSharp.Extensions;
 using OpenCvSharp;
 using Windows.Media.Ocr;
+using System.Runtime.InteropServices;
 
 namespace ShinyColorsMobTalker.Models
 {
@@ -33,11 +34,18 @@ namespace ShinyColorsMobTalker.Models
 
         private OcrEngine ocrEngine;
 
+        private bool isStarted;
+
+        private Mat arrowTemplate;        
+
 
 
         private CommonModel()
         {
             ocrEngine = OcrEngine.TryCreateFromUserProfileLanguages();
+            isStarted = false;
+
+            arrowTemplate = BitmapConverter.ToMat(new Bitmap("arrow.png"));
         }
         
 
@@ -89,9 +97,50 @@ namespace ShinyColorsMobTalker.Models
         {
             while(true)
             {                
-                if(capturedImage != null)
+                if(isStarted && capturedImage != null)
                 {
                     ScreenShot();
+                    Mat screenMat = BitmapConverter.ToMat(capturedImage);
+                    if (MatchArrow(screenMat, arrowTemplate, 0.9))
+                    {                        
+                        Win32Point mousePosition = new Win32Point {
+                            X = 0,
+                            Y = 0
+                        };
+
+                        NativeMethods.GetCursorPos (ref mousePosition);
+                        INPUT[] mouseInputs = new INPUT[]
+                        {
+                            new INPUT {
+                                type = NativeMethods.INPUT_MOUSE,
+                                ui = new INPUT_UNION {
+                                    mouse = new MOUSEINPUT {
+                                        dwFlags = NativeMethods.MOUSEEVENTF_LEFTDOWN,
+                                        dx = mousePosition.X,
+                                        dy = mousePosition.Y,
+                                        mouseData = 0,
+                                        dwExtraInfo = IntPtr.Zero,
+                                        time = 0
+                                    }   
+                                }
+                            },
+                            new INPUT {
+                                type = NativeMethods.INPUT_MOUSE,
+                                ui = new INPUT_UNION {
+                                    mouse = new MOUSEINPUT {
+                                        dwFlags = NativeMethods.MOUSEEVENTF_LEFTUP,
+                                        dx = mousePosition.X,
+                                        dy = mousePosition.Y,
+                                        mouseData = 0,
+                                        dwExtraInfo = IntPtr.Zero,
+                                        time = 0
+                                    }
+                                }
+                            }
+                        };
+                        System.Threading.Thread.Sleep(500);
+                        NativeMethods.SendInput(2, ref mouseInputs[0], Marshal.SizeOf(mouseInputs[0]));
+                    }
                     Bitmap binaryImage = ConvertBinayImage(capturedImage);
                     SoftwareBitmap softwareBmp = await GetSoftWareBmp(binaryImage);
                     currentTextData = await OCR(softwareBmp);
@@ -145,11 +194,33 @@ namespace ShinyColorsMobTalker.Models
                 }
                 else
                 {
-                    tmpSpeakerText += line.value.Text + "\n";
+                    tmpSpeakerText += line.value.Text + "。";
                 }
             }
             return new TextData(tmpSpeaker, tmpSpeakerText);
         }
 
+        private bool MatchArrow(Mat target, Mat template, double threshold)
+        {
+            using (Mat result = new Mat())
+            {
+                Cv2.MatchTemplate(target, template, result, TemplateMatchModes.CCoeffNormed);
+
+                OpenCvSharp.Point minloc, maxloc;
+                double minval, maxval;
+                Cv2.MinMaxLoc(result, out minval, out maxval, out minloc, out maxloc);
+                Debug.Print(maxval.ToString());
+                if(maxval >= threshold)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void ToggleProcess()
+        {
+            isStarted = !isStarted;
+        }
     }
 }

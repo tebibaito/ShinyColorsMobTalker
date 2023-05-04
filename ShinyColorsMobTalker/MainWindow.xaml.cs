@@ -40,5 +40,10 @@ namespace ShinyColorsMobTalker
         {
             CommonModel.GetInstance().ScreenShot();
         }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            CommonModel.GetInstance().ToggleProcess();
+        }
     }
 }
