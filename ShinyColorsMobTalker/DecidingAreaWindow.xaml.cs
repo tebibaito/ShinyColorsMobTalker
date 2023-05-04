@@ -105,7 +105,7 @@ namespace ShinyColorsMobTalker
            
 
             Rectangle rect = new Rectangle();
-            rect.Stroke = new SolidColorBrush(Colors.Red);
+            rect.Stroke = new SolidColorBrush(Colors.Yellow);
             rect.StrokeThickness = 1;
 
             rect.Width = Math.Abs(initPoint.X - point.X);

@@ -59,6 +59,7 @@
     <Compile Include="Models\CommonModel.cs" />
     <Compile Include="Models\NativeMethods.cs" />
     <Compile Include="Models\TextData.cs" />
+    <Compile Include="Models\VoiceVoxClient.cs" />
     <Compile Include="ViewModels\DecidingAreaWindowViewModel.cs" />
     <Page Include="DecidingAreaWindow.xaml">
       <SubType>Designer</SubType>

@@ -100,51 +100,43 @@ namespace ShinyColorsMobTalker.Models
                 if(isStarted && capturedImage != null)
                 {
                     ScreenShot();
-                    Mat screenMat = BitmapConverter.ToMat(capturedImage);
-                    if (MatchArrow(screenMat, arrowTemplate, 0.9))
-                    {                        
-                        Win32Point mousePosition = new Win32Point {
-                            X = 0,
-                            Y = 0
-                        };
-
-                        NativeMethods.GetCursorPos (ref mousePosition);
-                        INPUT[] mouseInputs = new INPUT[]
+                    Bitmap bottomHalf = capturedImage.Clone(
+                        new Rectangle(0, capturedImage.Height / 3 * 2, capturedImage.Width, capturedImage.Height / 3), 
+                        capturedImage.PixelFormat);
+                    Mat screenMat = BitmapConverter.ToMat(bottomHalf);
+                    Mat[] planes;
+                    Cv2.Split(screenMat, out planes);
+                    double[] rgbMeanArray = { Cv2.Mean(planes[2])[0], Cv2.Mean(planes[1])[0], Cv2.Mean(planes[0])[0] };
+                    int maxColorIndex = 0;
+                    double maxVal = 0;
+                    for(int i = 0; i < rgbMeanArray.Length ; i++)
+                    {
+                        if(maxVal < rgbMeanArray[i])
                         {
-                            new INPUT {
-                                type = NativeMethods.INPUT_MOUSE,
-                                ui = new INPUT_UNION {
-                                    mouse = new MOUSEINPUT {
-                                        dwFlags = NativeMethods.MOUSEEVENTF_LEFTDOWN,
-                                        dx = mousePosition.X,
-                                        dy = mousePosition.Y,
-                                        mouseData = 0,
-                                        dwExtraInfo = IntPtr.Zero,
-                                        time = 0
-                                    }   
-                                }
-                            },
-                            new INPUT {
-                                type = NativeMethods.INPUT_MOUSE,
-                                ui = new INPUT_UNION {
-                                    mouse = new MOUSEINPUT {
-                                        dwFlags = NativeMethods.MOUSEEVENTF_LEFTUP,
-                                        dx = mousePosition.X,
-                                        dy = mousePosition.Y,
-                                        mouseData = 0,
-                                        dwExtraInfo = IntPtr.Zero,
-                                        time = 0
-                                    }
-                                }
-                            }
-                        };
-                        System.Threading.Thread.Sleep(500);
-                        NativeMethods.SendInput(2, ref mouseInputs[0], Marshal.SizeOf(mouseInputs[0]));
+                            maxVal = rgbMeanArray[i];
+                            maxColorIndex = i;
+                        }
                     }
                     Bitmap binaryImage = ConvertBinayImage(capturedImage);
                     SoftwareBitmap softwareBmp = await GetSoftWareBmp(binaryImage);
-                    currentTextData = await OCR(softwareBmp);
-                    Debug.Print($"speaker:{currentTextData.speaker}, {currentTextData.text}");                    
+                    currentTextData = await OCR(softwareBmp);                    
+                    if (MatchArrow(screenMat, arrowTemplate, 0.9))
+                    {
+                        if((maxColorIndex == 1 || maxColorIndex == 2) && currentTextData.text.Length > 0)
+                        {
+                            Debug.Print($"speaker:{currentTextData.speaker}, {currentTextData.text}");
+                            string query = await VoiceVoxClient.GetQuery(currentTextData.text);
+                            VoiceVoxClient.Speek(query);
+                        }
+                        mouseClick(500);
+                    }
+                    else
+                    {
+                        if ((maxColorIndex == 1 || maxColorIndex == 2) && currentTextData.text.Length > 0)
+                        {
+                            mouseClick(0);
+                        }
+                    }
                 }
                 System.Threading.Thread.Sleep(100);
             }
@@ -193,10 +185,11 @@ namespace ShinyColorsMobTalker.Models
                     tmpSpeaker = line.value.Text;
                 }
                 else
-                {
+                {                    
                     tmpSpeakerText += line.value.Text + "。";
                 }
             }
+            tmpSpeakerText = tmpSpeakerText.Replace(" ", "");
             return new TextData(tmpSpeaker, tmpSpeakerText);
         }
 
@@ -209,7 +202,6 @@ namespace ShinyColorsMobTalker.Models
                 OpenCvSharp.Point minloc, maxloc;
                 double minval, maxval;
                 Cv2.MinMaxLoc(result, out minval, out maxval, out minloc, out maxloc);
-                Debug.Print(maxval.ToString());
                 if(maxval >= threshold)
                 {
                     return true;
@@ -221,6 +213,48 @@ namespace ShinyColorsMobTalker.Models
         public void ToggleProcess()
         {
             isStarted = !isStarted;
+        }
+
+
+        private void mouseClick(int sleepTime)
+        {
+            Win32Point mousePosition = new Win32Point {
+                X = 0,
+                Y = 0
+                };
+
+            NativeMethods.GetCursorPos (ref mousePosition);
+            INPUT[] mouseInputs = new INPUT[]
+            {
+                new INPUT {
+                    type = NativeMethods.INPUT_MOUSE,
+                    ui = new INPUT_UNION {
+                        mouse = new MOUSEINPUT {
+                            dwFlags = NativeMethods.MOUSEEVENTF_LEFTDOWN,
+                            dx = mousePosition.X,
+                            dy = mousePosition.Y,
+                            mouseData = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                            time = 0
+                        }   
+                    }
+                },
+                new INPUT {
+                    type = NativeMethods.INPUT_MOUSE,
+                    ui = new INPUT_UNION {
+                        mouse = new MOUSEINPUT {
+                            dwFlags = NativeMethods.MOUSEEVENTF_LEFTUP,
+                            dx = mousePosition.X,
+                            dy = mousePosition.Y,
+                            mouseData = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                            time = 0
+                        }
+                    }
+                }
+            };
+            System.Threading.Thread.Sleep(sleepTime);
+            NativeMethods.SendInput(2, ref mouseInputs[0], Marshal.SizeOf(mouseInputs[0]));
         }
     }
 }
