@@ -6,7 +6,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+using NAudio.Wave;
+
 
 namespace ShinyColorsMobTalker.Models
 {
@@ -16,7 +17,16 @@ namespace ShinyColorsMobTalker.Models
 
         private static  int port = 50021;
 
-        private static HttpClient client = new HttpClient();
+        private static HttpClient client;
+
+        public static bool isPlaying { get; private set; }
+
+
+
+        public static void Init()
+        {
+            client = new HttpClient();
+        }
 
 
         public static async Task<string> GetQuery(string text)
@@ -37,7 +47,7 @@ namespace ShinyColorsMobTalker.Models
         }
 
 
-        public static async void Speek(string query)
+        public static async Task Speek(string query)
         {
             string url = $"{baseUrl}:{port}/synthesis";
             int speaker = 1;
@@ -53,8 +63,12 @@ namespace ShinyColorsMobTalker.Models
 
             using(var stream = await response.Content.ReadAsStreamAsync())
             {
-                var player = new SoundPlayer(stream);
-                player.PlaySync();
+                WaveOut waveOut = new WaveOut();
+                WaveFileReader wfr = new WaveFileReader(stream);
+                waveOut.Init(wfr);
+                waveOut.Play();
+                // 再生の終了を待つ
+                while(waveOut.PlaybackState == PlaybackState.Playing);
             }
         }
 

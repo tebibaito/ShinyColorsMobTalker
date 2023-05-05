@@ -46,6 +46,8 @@ namespace ShinyColorsMobTalker.Models
             isStarted = false;
 
             arrowTemplate = BitmapConverter.ToMat(new Bitmap("arrow.png"));
+
+            VoiceVoxClient.Init();
         }
         
 
@@ -99,7 +101,10 @@ namespace ShinyColorsMobTalker.Models
             {                
                 if(isStarted && capturedImage != null)
                 {
+                    // テキストボックスをスクリーンショット
                     ScreenShot();
+
+                    // テキストボックスの色を判定
                     Bitmap bottomHalf = capturedImage.Clone(
                         new Rectangle(0, capturedImage.Height / 3 * 2, capturedImage.Width, capturedImage.Height / 3), 
                         capturedImage.PixelFormat);
@@ -117,18 +122,27 @@ namespace ShinyColorsMobTalker.Models
                             maxColorIndex = i;
                         }
                     }
+
+                    // 文字読み取り
                     Bitmap binaryImage = ConvertBinayImage(capturedImage);
                     SoftwareBitmap softwareBmp = await GetSoftWareBmp(binaryImage);
-                    currentTextData = await OCR(softwareBmp);                    
+                    currentTextData = await OCR(softwareBmp);
+
+                    // 矢印がテキストボックスにあったら
                     if (MatchArrow(screenMat, arrowTemplate, 0.9))
                     {
+                        // 話し手がモブかプロデューサーでテキストがあった場合、VoiceVoxでしゃべらせる
                         if((maxColorIndex == 1 || maxColorIndex == 2) && currentTextData.text.Length > 0)
                         {
                             Debug.Print($"speaker:{currentTextData.speaker}, {currentTextData.text}");
                             string query = await VoiceVoxClient.GetQuery(currentTextData.text);
-                            VoiceVoxClient.Speek(query);
+                            await VoiceVoxClient.Speek(query);
+                            mouseClick(500);
+                        }                        
+                        else
+                        {
+                            mouseClick(500);
                         }
-                        mouseClick(500);
                     }
                     else
                     {
@@ -138,7 +152,7 @@ namespace ShinyColorsMobTalker.Models
                         }
                     }
                 }
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(500);
             }
         }
 
